@@ -149,3 +149,22 @@ i.int{background:var(--lc-deep)}
   .lc-cta{width:100%;justify-content:center}
 }
 @media(prefers-reduced-motion:reduce){.lc *,.lc *::before,.lc *::after{animation-duration:.01ms!important;animation-delay:0s!important;transition-duration:.01ms!important}}
+
+
+/* ===== Payment frequency ===== */
+.lc-seg-ctl{position:relative;display:grid;grid-template-columns:1fr 1fr;padding:5px;border-radius:18px;background:var(--lc-soft);border:1.5px solid var(--lc-line)}
+.lc-seg-thumb{position:absolute;top:5px;bottom:5px;left:5px;width:calc(50% - 5px);border-radius:14px;background:linear-gradient(135deg,#5db996,#3f9f80);box-shadow:0 10px 20px -8px rgba(47,143,110,.75),inset 0 1px 1px rgba(255,255,255,.5);transition:transform .35s cubic-bezier(.3,.9,.3,1.15)}
+.lc-seg-ctl[data-pos="bimonthly"] .lc-seg-thumb{transform:translateX(100%)}
+.lc-seg-ctl button{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:11px 8px;border:0;background:transparent;border-radius:14px;cursor:pointer;font-family:inherit;color:#44534d;transition:color .25s}
+.lc-seg-ctl button strong{font-size:14.5px;font-weight:800}
+.lc-seg-ctl button small{font-size:11px;font-weight:600;opacity:.75}
+.lc-seg-ctl button.on{color:#fff}
+.lc-seg-ctl button:focus-visible{outline:3px solid rgba(93,185,150,.5);outline-offset:2px}
+.lc-freq-hint{margin:12px 0 0;font-size:12.5px;line-height:1.5;color:#6d7b75}
+.lc-h-sub{margin-left:6px;font-size:11.5px;font-weight:700;color:#6d7b75;background:var(--lc-soft);padding:3px 9px;border-radius:20px}
+.lc-bars.many{gap:clamp(4px,1vw,12px)}
+.lc-bars.many .lc-x{font-size:10.5px}
+.lc-bars.many .lc-stack{border-radius:7px 7px 3px 3px}
+.lc-bars.many .lc-col:nth-child(n+7) .lc-stack{animation-delay:.3s}
+.lc-table{min-width:640px}
+@media(max-width:620px){.lc-seg-ctl button strong{font-size:13.5px}.lc-seg-ctl button small{font-size:10px}.lc-bars.many{gap:3px}.lc-bars.many .lc-x{font-size:9px}}
