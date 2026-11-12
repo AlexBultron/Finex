@@ -319,9 +319,9 @@ function Preloader({ onDone }) {
 }
 
 const verifiedBadges = [
+  { key: 'sec', src: secLogo, label: 'SEC', name: 'Securities and Exchange Commission' },
   { key: 'bir', src: birLogo, label: 'BIR', name: 'Bureau of Internal Revenue' },
   { key: 'npc', src: npcLogo, label: 'NPC', name: 'National Privacy Commission' },
-  { key: 'sec', src: secLogo, label: 'SEC', name: 'Securities and Exchange Commission' },
   { key: 'amlc', src: amlcLogo, label: 'AMLC', name: 'Anti-Money Laundering Council' }
 ];
 
@@ -621,9 +621,9 @@ function App() {
             <div className="gallery-stat-divider" />
             <div className="gallery-stat"><strong>5+ Years</strong><span>in the Philippines</span></div>
           </div>
-          <VerifiedBadges/>
         </div>
         <Gallery/>
+        <VerifiedBadges/>
         <div className="hero-bottom">
           <p>Business expansion loans, MSME financing and corporate solutions,<br className="desktop-break"/> built to help Filipino businesses grow.</p>
           <div className="hero-actions">

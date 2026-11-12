@@ -2,7 +2,7 @@
 *{box-sizing:border-box}body{margin:0;min-width:320px}a{color:inherit;text-decoration:none}button{font:inherit}
 .topbar{height:70px;width:100%;position:relative;z-index:20;background:rgba(255,255,255,.92)}.nav-inner{height:100%;max-width:1510px;padding:0 36px;margin:auto;display:flex;align-items:center;justify-content:space-between}
 .brand{display:inline-flex;align-items:center;gap:10px;font-size:16px;font-weight:700;letter-spacing:-.5px;white-space:nowrap}.brand-mark{width:28px;height:28px;display:grid;grid-template-columns:1fr 1fr;gap:3px;transform:rotate(0deg)}.brand-mark i{background:#111;display:block}.brand-mark i:nth-child(1){border-radius:5px 10px 2px 10px}.brand-mark i:nth-child(2){border-radius:10px 5px 10px 2px}.brand-mark i:nth-child(3){border-radius:10px 2px 10px 5px}.brand-mark i:nth-child(4){border-radius:2px 10px 5px 10px}
-.nav-menu{display:flex;align-items:center;gap:32px;margin-left:80px}.nav-link{border:0;background:none;padding:9px 0;color:#555;font-size:13px;display:flex;align-items:center;gap:4px;cursor:pointer;transition:color .2s}.nav-link:hover,.nav-link.active{color:#111}.nav-dropdown{position:relative}.dropdown-panel{position:absolute;top:38px;left:-16px;min-width:190px;padding:9px;background:#fff;border:1px solid #eee;border-radius:12px;box-shadow:0 14px 35px #00000012;display:grid;gap:2px}.dropdown-panel a{font-size:12px;padding:10px;border-radius:7px;display:flex;justify-content:space-between;align-items:center;color:#555}.dropdown-panel a:hover{background:#f5f5f5;color:#111}.auth-actions{display:flex;align-items:center;gap:25px;font-size:13px}.signup{background:#151515;color:#fff!important;padding:9px 25px;border-radius:30px;font-size:12px;font-weight:600;transition:transform .2s,background .2s}.signup:hover,.primary-button:hover{background:#353535;transform:translateY(-2px)}.mobile-toggle,.mobile-auth{display:none}
+.nav-menu{display:flex;align-items:center;gap:32px;margin-left:80px}.nav-link{border:0;background:none;padding:9px 0;color:#555;font-size:13px;display:flex;align-items:center;gap:4px;cursor:pointer;transition:color .2s}.nav-link:hover,.nav-link.active{color:#111}.nav-dropdown{position:relative}.dropdown-panel{position:absolute;top:38px;left:-16px;min-width:190px;padding:9px;background:#fff;border:1px solid #eee;border-radius:12px;box-shadow:0 14px 35px #00000012;display:grid;gap:2px}.dropdown-panel a{font-size:12px;padding:10px;border-radius:7px;display:flex;justify-content:space-between;align-items:center;color:#555}.dropdown-panel a:hover{background:#f5f5f5;color:#111}.auth-actions{display:flex;align-items:center;gap:25px;font-size:13px}.signup{background:#5db996;color:#fff!important;padding:9px 25px;border-radius:30px;font-size:12px;font-weight:600;transition:transform .2s,background .2s}.signup:hover,.primary-button:hover{background:#353535;transform:translateY(-2px)}.mobile-toggle,.mobile-auth{display:none}
 .hero{padding-top:108px;text-align:center;overflow:hidden}.hero-copy{position:relative;z-index:2}.eyebrow{display:none;align-items:center;justify-content:center;gap:6px;color:#888;font-size:10px;letter-spacing:1.6px;margin-bottom:18px}.hero h1{font-size:clamp(39px,3.4vw,56px);line-height:1.08;letter-spacing:-2.7px;font-weight:700;margin:0 auto;max-width:900px}
 .gallery-shell{height:340px;position:relative;margin:7px auto 0;width:100%;display:flex;align-items:center;perspective:1100px}.gallery-track{height:280px;width:120%;margin-left:-10%;display:flex;align-items:center;justify-content:center;gap:8px;transform:rotateX(0deg);animation:galleryIn 1.2s cubic-bezier(.2,.8,.2,1) both}.gallery-card{height:220px;width:9.15%;min-width:110px;max-width:175px;flex:1 1 0;border-radius:7px;overflow:hidden;position:relative;box-shadow:0 8px 25px #0000000b;transform:perspective(900px) rotateY(-5deg);transition:transform .45s,filter .45s}.gallery-card:nth-child(n+7){transform:perspective(900px) rotateY(5deg)}.gallery-card:hover{transform:translateY(-12px) scale(1.04);z-index:5;filter:brightness(1.08)}.gallery-card:nth-child(1),.gallery-card:nth-child(11){height:250px}.gallery-card:nth-child(2),.gallery-card:nth-child(10){height:235px}.gallery-card:nth-child(3),.gallery-card:nth-child(9){height:215px}.gallery-card:nth-child(4),.gallery-card:nth-child(8){height:200px}.gallery-card:nth-child(5),.gallery-card:nth-child(7){height:190px}.gallery-card:nth-child(6){height:180px}
 .gallery-glow{position:absolute;z-index:4;top:0;bottom:0;width:12%;pointer-events:none;filter:blur(12px)}.glow-left{left:-5%;background:linear-gradient(90deg,#ff6a18aa,#ff9b22aa,transparent)}.glow-right{right:-5%;background:linear-gradient(270deg,#172d62aa,#55b6d5aa,transparent)}
@@ -980,4 +980,26 @@ footer.sf{--ink:#0a2118;--ink2:#3d5a4d;position:relative;display:block;width:100
   .wn-body{padding:14px 14px 4px;gap:12px}
   .wn-lead{font-size:14.5px}
   .wn-foot{padding:10px 14px 16px}
+}
+
+
+/* ===== Badges under carousel + hero buttons ===== */
+.hero>.vb-wrap{margin-top:14px;position:relative;z-index:5}
+.hero-bottom{margin-top:24px}
+@media(max-width:760px){.hero>.vb-wrap{margin-top:8px}.hero-bottom{margin-top:22px}}
+.hero-actions .primary-button{background:linear-gradient(135deg,#5db996,#4aa883);color:#fff;border:1.5px solid #5db996;box-shadow:0 8px 18px -6px rgba(93,185,150,.7)}
+.hero-actions .primary-button:hover{transform:translateY(-2px);background:#4fae8b}
+.hero-actions .text-button{height:46px;padding:0 24px;border:1.5px solid #5db996;border-radius:30px;background:#fff;color:#2f8f6e;transition:transform .2s,background .2s,box-shadow .2s}
+.hero-actions .text-button:hover{transform:translateY(-2px);background:#fff;box-shadow:0 8px 18px -8px rgba(93,185,150,.6)}
+@media(max-width:760px){.hero-actions .text-button{height:44px;padding:0 18px}}
+
+/* ===== Badges: sit close to the carousel (change --vb-gap to move up/down) ===== */
+.hero{--vb-gap:-100px}
+.hero>.vb-wrap{margin-top:var(--vb-gap);gap:10px}
+@media(max-width:760px){.hero{--vb-gap:-60px}.hero>.vb-wrap{gap:8px}}
+
+/* ===== Mobile: carousel closer to the stats (change --cg-gap; more negative = closer) ===== */
+@media(max-width:760px){
+  .hero{--cg-gap:-74px}
+  .hero .tunnel-gallery,.hero .gallery-shell{margin-top:var(--cg-gap)}
 }
