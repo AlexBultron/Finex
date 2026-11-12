@@ -3,11 +3,6 @@ import { ArrowUpRight, Check, ChevronRight, Clock, MapPin, Navigation, Phone, Se
 
 /* ---------- Settings ---------- */
 
-// Optional: paste a form-handling URL here (for example a Formspree endpoint like
-// 'https://formspree.io/f/xxxxxxx') to have the form POST there.
-// Leave it empty and "Send message" opens WhatsApp with the message ready to send.
-const FORM_ENDPOINT = '';
-
 const MOBILE_DISPLAY = '(+63) 917 122 2015';
 const MOBILE_E164 = '639171222015';
 const LANDLINE_DISPLAY = '8813 3210';
@@ -70,89 +65,193 @@ export function ContactArt() {
   );
 }
 
-/* ---------- Form ---------- */
+/* ---------- Question-by-question form ---------- */
 
-const EMPTY = { name: '', phone: '', email: '', message: '' };
+// Edit the questions and choices here. type: 'single' | 'multi' | 'text' | 'long' | 'phone'
+const STEPS = [
+  { id: 'inquiry', type: 'single', q: 'What is your inquiry?', hint: 'Pick the one that fits best.', label: 'Inquiry',
+    options: ['Business Expansion Loan', 'MSME Financing', 'Corporate Financing', 'General question'] },
+  { id: 'business', type: 'single', q: 'What kind of business do you have?', label: 'Type of business',
+    options: ['Retail / Trading', 'Food & Beverage', 'Services', 'Manufacturing', 'Construction / Real Estate', 'Other'] },
+  { id: 'years', type: 'single', q: 'How long has your business been operating?', label: 'Years in business',
+    options: ['Not yet started', 'Less than 1 year', '1–3 years', '3–5 years', '5+ years'] },
+  { id: 'amount', type: 'single', q: 'About how much financing are you looking for?', hint: 'An estimate is fine.', label: 'Financing amount',
+    options: ['Below ₱500,000', '₱500,000 – ₱2M', '₱2M – ₱10M', '₱10M – ₱50M', 'Above ₱50M', 'Not sure yet'] },
+  { id: 'purpose', type: 'multi', q: 'What will the funds be used for?', hint: 'Choose all that apply.', label: 'Use of funds',
+    options: ['Working capital', 'Inventory', 'Equipment', 'Expansion / new location', 'Business improvements', 'Acquisition / merger', 'Other'] },
+  { id: 'timeline', type: 'single', q: 'When do you need the funds?', label: 'Timeline',
+    options: ['As soon as possible', 'Within 1 month', 'In 1–3 months', 'Just exploring'] },
+  { id: 'notes', type: 'long', q: 'Anything else you’d like us to know?', hint: 'Optional. Skip if you’d rather not add more.', optional: true, label: 'Notes', placeholder: 'Type here…' },
+  { id: 'name', type: 'text', q: 'What’s your name?', label: 'Name', placeholder: 'Your full name', autoComplete: 'name' },
+  { id: 'company', type: 'text', q: 'What’s your company name?', hint: 'Type “None” if you don’t have one yet.', label: 'Company', placeholder: 'Company or business name', autoComplete: 'organization' },
+  { id: 'phone', type: 'phone', q: 'What’s the best phone number to reach you?', label: 'Phone number', placeholder: '(+63) 9XX XXX XXXX', autoComplete: 'tel' }
+];
 
-function validate(v) {
-  const e = {};
-  if (!v.name.trim()) e.name = 'Please enter your name.';
-  if (!/^[+()\d\s-]{7,}$/.test(v.phone.trim())) e.phone = 'Please enter a valid phone number.';
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.email.trim())) e.email = 'Please enter a valid email address.';
-  if (!v.message.trim()) e.message = 'Please tell us how we can help.';
-  return e;
+const stepError = (step, value) => {
+  if (step.optional) return '';
+  if (step.type === 'multi') return value && value.length ? '' : 'Please choose at least one.';
+  const v = (value || '').trim();
+  if (!v) return step.type === 'single' ? 'Please choose one to continue.' : 'This one is required.';
+  if (step.type === 'phone' && !/^[+()\d\s-]{7,}$/.test(v)) return 'Please enter a valid phone number.';
+  return '';
+};
+
+const answerText = (step, value) => (step.type === 'multi' ? (value || []).join(', ') : (value || '').trim());
+
+function buildMessage(answers) {
+  const lines = ['Hello FINEX.PH! I’d like to make an inquiry.', ''];
+  STEPS.forEach((s) => {
+    const t = answerText(s, answers[s.id]);
+    if (t) lines.push(`${s.label}: ${t}`);
+  });
+  lines.push('', 'Thank you!');
+  return lines.join('\n');
 }
 
 function ContactForm() {
-  const [values, setValues] = useState(EMPTY);
-  const [errors, setErrors] = useState({});
-  const [status, setStatus] = useState('idle'); // idle | sending | sent | error
+  const [index, setIndex] = useState(0);
+  const [answers, setAnswers] = useState({});
+  const [error, setError] = useState('');
+  const [dir, setDir] = useState('fwd');
+  const [sendState, setSendState] = useState('idle'); // idle | sending | sent | error
+  const [trap, setTrap] = useState('');
+  const total = STEPS.length;
+  const review = index >= total;
+  const step = STEPS[index];
+  const message = buildMessage(answers);
 
-  const set = (k) => (e) => {
-    setValues((v) => ({ ...v, [k]: e.target.value }));
-    if (errors[k]) setErrors((er) => ({ ...er, [k]: undefined }));
+  const setValue = (id, value) => { setAnswers((a) => ({ ...a, [id]: value })); setError(''); };
+  const go = (next, d) => { setDir(d); setIndex(next); setError(''); };
+
+  const next = (override) => {
+    const value = override !== undefined ? override : answers[step.id];
+    const err = stepError(step, value);
+    if (err) { setError(err); return; }
+    go(index + 1, 'fwd');
   };
 
-  const onSubmit = async (e) => {
-    e.preventDefault();
-    const errs = validate(values);
-    setErrors(errs);
-    if (Object.keys(errs).length) return;
+  const pickSingle = (opt) => {
+    setValue(step.id, opt);
+    setTimeout(() => go(index + 1, 'fwd'), 220); // auto-advance after a short beat
+  };
+  const toggleMulti = (opt) => {
+    const cur = answers[step.id] || [];
+    setValue(step.id, cur.includes(opt) ? cur.filter((o) => o !== opt) : [...cur, opt]);
+  };
 
-    if (FORM_ENDPOINT) {
-      setStatus('sending');
-      try {
-        const res = await fetch(FORM_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-          body: JSON.stringify(values)
-        });
-        if (!res.ok) throw new Error('Request failed');
-        setStatus('sent');
-        setValues(EMPTY);
-      } catch {
-        setStatus('error');
-      }
-      return;
+  const onKeyDown = (e) => {
+    if (e.key === 'Enter' && !(e.target.tagName === 'TEXTAREA' && !e.metaKey && !e.ctrlKey)) { e.preventDefault(); next(); }
+  };
+
+  const openWhatsApp = () => {
+    window.open(`https://wa.me/${MOBILE_E164}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
+  };
+  const send = async () => {
+    setSendState('sending');
+    try {
+      const body = Object.fromEntries(STEPS.map((s) => [s.id, answerText(s, answers[s.id])]));
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...body, website: trap })
+      });
+      if (!res.ok) throw new Error('send failed');
+      setSendState('sent');
+    } catch {
+      setSendState('error'); // offer the WhatsApp link as a backup
     }
-
-    // No form endpoint configured: hand the message to WhatsApp, ready to send.
-    const text = `Hello FINEX.PH,\n\nName: ${values.name}\nPhone: ${values.phone}\nEmail: ${values.email}\n\n${values.message}`;
-    window.open(`https://wa.me/${MOBILE_E164}?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
-    setStatus('sent');
-    setValues(EMPTY);
   };
+  const restart = () => { setAnswers({}); setSendState('idle'); go(0, 'back'); };
 
-  const field = (id, label, input) => (
-    <div className={`ct-field ${errors[id] ? 'has-error' : ''}`}>
-      <label htmlFor={`ct-${id}`}>{label}</label>
-      {input}
-      {errors[id] && <span className="ct-error" role="alert">{errors[id]}</span>}
-    </div>
-  );
+  const pct = Math.round((Math.min(index, total) / total) * 100);
+
+  if (sendState === 'sent') {
+    const first = (answers.name || '').trim().split(' ')[0];
+    return (
+      <div className="qf qf-done">
+        <span className="qf-check"><Check size={30} strokeWidth={3} /></span>
+        <h3 className="qf-q">Thank you{first ? `, ${first}` : ''}!</h3>
+        <p className="qf-hint">We’ve received your inquiry. Our team will contact you at <strong>{(answers.phone || '').trim()}</strong> soon.</p>
+        <div className="qf-nav qf-nav-center">
+          <button type="button" className="qf-back" onClick={restart}>Send another inquiry</button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <form className="ct-form" onSubmit={onSubmit} noValidate>
-      {status === 'sent' && (
-        <div className="ct-banner ct-banner-ok" role="status">
-          <Check size={18} strokeWidth={3} />
-          <span>{FORM_ENDPOINT ? 'Thank you! Your message has been sent. We’ll get back to you soon.' : 'Almost there! Finish sending your message in the WhatsApp window that just opened.'}</span>
+    <div className="qf" onKeyDown={review ? undefined : onKeyDown}>
+      <div className="qf-top">
+        <span className="qf-count" aria-live="polite">{review ? 'Review' : `Question ${index + 1} of ${total}`}</span>
+        <span className="qf-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow={pct}><i style={{ width: `${review ? 100 : pct}%` }} /></span>
+      </div>
+
+      {!review ? (
+        <div className={`qf-step qf-${dir}`} key={step.id}>
+          <h3 className="qf-q">{step.q}</h3>
+          {step.hint && <p className="qf-hint">{step.hint}</p>}
+
+          {(step.type === 'single' || step.type === 'multi') && (
+            <div className="qf-options" role={step.type === 'single' ? 'radiogroup' : 'group'} aria-label={step.q}>
+              {step.options.map((opt) => {
+                const on = step.type === 'single' ? answers[step.id] === opt : (answers[step.id] || []).includes(opt);
+                return (
+                  <button key={opt} type="button" className={`qf-chip ${on ? 'is-on' : ''}`} role={step.type === 'single' ? 'radio' : 'checkbox'} aria-checked={on}
+                    onClick={() => (step.type === 'single' ? pickSingle(opt) : toggleMulti(opt))}>
+                    <span className="qf-dot">{on && <Check size={12} strokeWidth={3.5} />}</span>{opt}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {(step.type === 'text' || step.type === 'phone') && (
+            <input className="qf-input" autoFocus type={step.type === 'phone' ? 'tel' : 'text'} autoComplete={step.autoComplete} placeholder={step.placeholder}
+              value={answers[step.id] || ''} onChange={(e) => setValue(step.id, e.target.value)} aria-label={step.q} />
+          )}
+          {step.type === 'long' && (
+            <textarea className="qf-input" autoFocus rows="4" placeholder={step.placeholder} value={answers[step.id] || ''} onChange={(e) => setValue(step.id, e.target.value)} aria-label={step.q} />
+          )}
+
+          {error && <p className="qf-error" role="alert">{error}</p>}
+
+          <div className="qf-nav">
+            <button type="button" className="qf-back" onClick={() => go(index - 1, 'back')} disabled={index === 0}>← Back</button>
+            {step.type !== 'single' && (
+              <button type="button" className="primary-button qf-next" onClick={() => next()}>
+                {step.optional && !(answers[step.id] || '').trim() ? 'Skip' : index === total - 1 ? 'Review' : 'Next'} <ArrowUpRight size={15} />
+              </button>
+            )}
+            {step.type === 'single' && <span className="qf-tip">Tap an answer to continue</span>}
+          </div>
+        </div>
+      ) : (
+        <div className="qf-step qf-fwd" key="review">
+          <h3 className="qf-q">All set, please review.</h3>
+          <p className="qf-hint">Check your answers, then send them to the FINEX.PH team.</p>
+          <ul className="qf-summary">
+            {STEPS.map((s, i) => {
+              const t = answerText(s, answers[s.id]);
+              return t ? <li key={s.id}><span>{s.label}</span><strong>{t}</strong><button type="button" onClick={() => go(i, 'back')}>Edit</button></li> : null;
+            })}
+          </ul>
+          <input className="qf-hp" tabIndex={-1} autoComplete="off" aria-hidden="true" name="website" value={trap} onChange={(e) => setTrap(e.target.value)} />
+          {sendState === 'error' && (
+            <div className="ct-banner ct-banner-err" role="alert" style={{ marginTop: 16 }}>
+              <span>Sorry, we couldn’t send that just now. You can send the same message directly on WhatsApp instead.</span>
+            </div>
+          )}
+          <div className="qf-nav qf-nav-end">
+            <button type="button" className="qf-back" onClick={() => go(total - 1, 'back')} disabled={sendState === 'sending'}>← Back</button>
+            {sendState === 'error' && <button type="button" className="qf-back qf-wa" onClick={openWhatsApp}>Send on WhatsApp</button>}
+            <button type="button" className="primary-button qf-next" onClick={send} disabled={sendState === 'sending'}>
+              {sendState === 'sending' ? 'Sending…' : sendState === 'error' ? 'Try again' : 'Send inquiry'} <Send size={15} />
+            </button>
+          </div>
+          <p className="ct-note"><button type="button" className="qf-link" onClick={restart}>Start over</button></p>
         </div>
       )}
-      {status === 'error' && <div className="ct-banner ct-banner-err" role="alert">Sorry, something went wrong. Please try again, or call or message us directly.</div>}
-
-      <div className="ct-grid2">
-        {field('name', 'Name', <input id="ct-name" type="text" autoComplete="name" placeholder="Your full name" value={values.name} onChange={set('name')} />)}
-        {field('phone', 'Phone Number', <input id="ct-phone" type="tel" autoComplete="tel" placeholder="(+63) 9XX XXX XXXX" value={values.phone} onChange={set('phone')} />)}
-      </div>
-      {field('email', 'Email', <input id="ct-email" type="email" autoComplete="email" placeholder="you@company.com" value={values.email} onChange={set('email')} />)}
-      {field('message', 'Message', <textarea id="ct-message" rows="5" placeholder="Tell us a little about your business and how we can help." value={values.message} onChange={set('message')} />)}
-
-      <button className="primary-button ct-submit" type="submit" disabled={status === 'sending'}>
-        {status === 'sending' ? 'Sending…' : 'Send message'} <Send size={15} />
-      </button>
-      {!FORM_ENDPOINT && <p className="ct-note">Sending opens WhatsApp with your message ready to go.</p>}
-    </form>
+    </div>
   );
 }
 

@@ -4,6 +4,22 @@ import { ChevronDown, ArrowUpRight, Menu, X, Sparkles, TrendingUp, Store, Buildi
 import './styles.css';
 import logo from './leaf.png';
 import { buildTunnelFoldSlider } from './tunnelFoldEngine.js';
+import galleryImg1 from './images/1.jpg';
+import galleryImg10 from './images/10.jpg';
+import galleryImg2 from './images/2.jpg';
+import galleryImg3 from './images/3.jpg';
+import galleryImg4 from './images/4.jpg';
+import galleryImg11 from './images/11.jpg';
+import galleryImg5 from './images/5.jpg';
+import galleryImg6 from './images/6.jpg';
+import galleryImg12 from './images/12.jpg';
+import galleryImg7 from './images/7.jpg';
+import galleryImg8 from './images/8.jpg';
+import galleryImg13 from './images/13.jpg';
+import galleryImg9 from './images/9.jpg';
+import galleryImg14 from './images/14.jpg';
+import galleryImg15 from './images/15.jpg';
+import galleryImg16 from './images/16.jpg';
 import ServicePage from './ServicePage.jsx';
 import ContactPage from './ContactPage.jsx';
 import { FaqPage, LegalPage } from './InfoPages.jsx';
@@ -145,24 +161,7 @@ function Gallery() {
     const root = rootRef.current;
     if (!root) return;
     const slider = buildTunnelFoldSlider(root, {
-      images: [
-       "src/images/1.jpg",
-      "./images/10.jpg",
-      "./src/images/2.jpg",
-      "./src/images/3.jpg",
-      "./src/images/4.jpg",
-      "./src/images/11.jpg",
-      "./src/images/5.jpg",
-      "./src/images/6.jpg",
-      "./src/images/12.jpg",
-      "./src/images/7.jpg",
-      "./src/images/8.jpg",
-      "./src/images/13.jpg",
-      "./src/images/9.jpg",
-      "./src/images/14.jpg",
-      "./src/images/15.jpg",
-      "./src/images/16.jpg",
-],
+      images: [galleryImg1, galleryImg10, galleryImg2, galleryImg3, galleryImg4, galleryImg11, galleryImg5, galleryImg6, galleryImg12, galleryImg7, galleryImg8, galleryImg13, galleryImg9, galleryImg14, galleryImg15, galleryImg16],
       speed: 1,
       playing: true,
       gap: 1.05999,
@@ -198,7 +197,7 @@ return (
       {/* Keep the original fallback image */}
       <img
         className="tf-still"
-        src="https://cdn.horizonx.so/tunnel-fold-slider/retrato-rizos-v20261007.webp"
+        src={galleryImg1}
         alt=""
         draggable="false"
       />
@@ -349,7 +348,7 @@ function App() {
       <section className="hero">
         <div className="hero-copy">
           <div className="eyebrow"><Sparkles size={13}/> FINANCIAL SOLUTIONS • PHILIPPINES</div>
-          <h1><span className="accent">Lending</span> a hand towards<br/>your financial<br/><span className="accent">success.</span></h1>
+          <h1>Lending a hand towards<br/><span className="accent">your financial<br/>success.</span></h1>
           <div className="gallery-stats">
             <div className="gallery-stat"><strong>1K+</strong><span>Partners</span></div>
             <div className="gallery-stat-divider" />
