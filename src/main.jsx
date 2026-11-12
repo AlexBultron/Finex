@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { ChevronDown, ArrowUpRight, Menu, X, Sparkles, TrendingUp, Store, Building2, Check } from 'lucide-react';
+import { ChevronDown, ArrowUpRight, Menu, X, Sparkles, TrendingUp, Store, Building2, Check, ShieldAlert, ShieldCheck, ArrowRight, Ban, MapPin, FileSignature, Landmark, Handshake } from 'lucide-react';
 import './styles.css';
 import logo from './leaf.png';
 import { buildTunnelFoldSlider } from './tunnelFoldEngine.js';
@@ -20,6 +20,10 @@ import galleryImg9 from './images/9.jpg';
 import galleryImg14 from './images/14.jpg';
 import galleryImg15 from './images/15.jpg';
 import galleryImg16 from './images/16.jpg';
+import birLogo from './logo/bir.jpg';
+import npcLogo from './logo/npc.jpg';
+import secLogo from './logo/sec.jpg';
+import amlcLogo from './logo/amlc.jpg';
 import ServicePage from './ServicePage.jsx';
 import ContactPage from './ContactPage.jsx';
 import { FaqPage, LegalPage } from './InfoPages.jsx';
@@ -122,7 +126,6 @@ function Nav() {
         {/*<a className="nav-link" href="#pricing">Pricing</a>
         <a className="nav-link" href="#community">Community</a>
         <a className="nav-link" href="#affiliate">Affiliate</a> */}
-        <Dropdown label="Resources" items={['Documentation', 'Inspiration', 'Changelog']}/>
         <a className="signup mobile-cta" href="#/contact">Contact Us</a>
         <SocialButtons className="mobile-social"/>
       </nav>
@@ -209,7 +212,7 @@ return (
 
 }
 
-function Preloader() {
+function Preloader({ onDone }) {
   const [phase, setPhase] = useState('show'); // show -> hide -> gone
   const [pct, setPct] = useState(0);
   const [prog, setProg] = useState(0);
@@ -256,7 +259,7 @@ function Preloader() {
       if (p >= 1 && !finished) {
         finished = true;
         tHide = setTimeout(() => setPhase('hide'), 350);   // brief pause on 100%
-        tGone = setTimeout(() => { setPhase('gone'); document.body.style.overflow = ''; }, 1000);
+        tGone = setTimeout(() => { setPhase('gone'); document.body.style.overflow = ''; onDone?.(); }, 1000);
         return;
       }
       raf = requestAnimationFrame(tick);
@@ -312,6 +315,93 @@ function Preloader() {
       <span className="pl2-bar"><i style={{ transform: `scaleX(${prog})` }} /></span>
     </div>
     {bursts.map((l) => <span key={l.id} className="pl2-spark" style={{ left: l.x, top: l.y, '--dx': `${Math.cos(l.a) * l.d}px`, '--dy': `${Math.sin(l.a) * l.d}px`, '--rot': `${l.r}deg` }} />)}
+  </div>;
+}
+
+const verifiedBadges = [
+  { key: 'bir', src: birLogo, label: 'BIR', name: 'Bureau of Internal Revenue' },
+  { key: 'npc', src: npcLogo, label: 'NPC', name: 'National Privacy Commission' },
+  { key: 'sec', src: secLogo, label: 'SEC', name: 'Securities and Exchange Commission' },
+  { key: 'amlc', src: amlcLogo, label: 'AMLC', name: 'Anti-Money Laundering Council' }
+];
+
+function VerifiedBadges() {
+  return <div className="vb-wrap">
+    <div className="vb-caption"><ShieldCheck size={13} strokeWidth={2.4}/> Officially verified</div>
+    <div className="vb-row">
+      {verifiedBadges.map((b, i) => (
+        <div key={b.key} className="vb" style={{ '--i': i }} title={`${b.name} (${b.label}) verified`}>
+          <span className="vb-emblem">
+            <span className="vb-face"><img src={b.src} alt={`${b.name} logo`} draggable="false"/></span>
+            <span className="vb-check"><Check size={11} strokeWidth={4}/></span>
+          </span>
+          <span className="vb-label">{b.label}</span>
+        </div>
+      ))}
+    </div>
+  </div>;
+}
+
+function WarningNotice({ ready }) {
+  const [visible, setVisible] = useState(true);
+  const [closing, setClosing] = useState(false);
+  const btnRef = useRef(null);
+  const active = ready && visible;
+
+  const close = () => {
+    if (closing) return;
+    setClosing(true);
+    setTimeout(() => setVisible(false), 320);
+  };
+
+  useEffect(() => {
+    if (!active) return undefined;
+    document.body.style.overflow = 'hidden';
+    const t = setTimeout(() => btnRef.current?.focus({ preventScroll: true }), 650);
+    const onKey = (e) => { if (e.key === 'Escape') close(); };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+    };
+  }, [active, closing]);
+
+  if (!active) return null;
+  return <div className={`wn ${closing ? 'is-closing' : ''}`} role="dialog" aria-modal="true" aria-labelledby="wn-title" onMouseDown={(e) => { if (e.target === e.currentTarget) close(); }}>
+    <div className="wn-card">
+      <button className="wn-x" type="button" onClick={close} aria-label="Close notice"><X size={15} strokeWidth={2.6}/></button>
+      <header className="wn-head">
+        <span className="wn-orb wn-orb-a" /><span className="wn-orb wn-orb-b" /><span className="wn-grid" />
+        <span className="wn-shield"><i /><i /><ShieldAlert size={30} strokeWidth={2}/></span>
+        <div className="wn-head-text">
+          <span className="wn-tag"><b /> Official advisory</span>
+          <h2 id="wn-title">Warning Notice:</h2>
+        </div>
+      </header>
+      <div className="wn-body">
+        <p className="wn-lead" style={{ '--i': 0 }}><strong>Finex.Ph Lending Solution Corporation</strong> is exclusively focused on business loans and does not operate an “Online Lending Platform”. We do not offer any personal loan products to individual consumers.</p>
+        <ul className="wn-steps">
+          {[
+            { Icon: Ban, text: 'We do not accept, originate or process loan applications and approvals online via a website or facebook or an App.' },
+            { Icon: Handshake, text: 'Loan applications are managed by our team members based in our Makati office through face-to-face interactions and physical transmission of client’s loan applications, business documentation and loan documentation.' },
+            { Icon: MapPin, text: 'We conduct physical site visits to our potential customer’s places of business and require mandatory face-to-face meetings with management.' },
+            { Icon: FileSignature, text: 'Loan agreements and documentation are also executed and signed in person.' },
+            { Icon: Landmark, text: 'Loan disbursements are made via bank wire transfers or company checks issued on our bank accounts.' }
+          ].map(({ Icon, text }, k) => (
+            <li key={k} style={{ '--i': k + 1 }}><span className="wn-ico"><Icon size={17} strokeWidth={2.2}/></span><p>{text}</p></li>
+          ))}
+        </ul>
+        <div className="wn-alert" style={{ '--i': 6 }}>
+          <span className="wn-alert-tag"><ShieldAlert size={13} strokeWidth={2.5}/> Beware of impostors</span>
+          <p>Potential borrowers need to be aware that any apps, websites, social media pages, or groups using the <strong>“Finex”</strong> or <strong>“Finex.Ph Lending Solution Corporation”</strong> name, other than our official channels (Facebook, Instagram, Threads, TikTok, and X, all under <strong>@finex.ph</strong>), do not represent our company and are not licensed or authorised to offer any online loan products.</p>
+          <p>We do not operate any groups, chats, or communities on any platform. All loan applications are handled face-to-face at our <strong>Makati office only</strong>.</p>
+        </div>
+      </div>
+      <footer className="wn-foot">
+        <button ref={btnRef} className="wn-btn" type="button" onClick={close}><span>Continue to website</span><ArrowRight size={16} strokeWidth={2.4}/></button>
+      </footer>
+    </div>
   </div>;
 }
 
@@ -497,6 +587,7 @@ function useRoute() {
 
 function App() {
   const route = useRoute();
+  const [preDone, setPreDone] = useState(false);
   const service = services[route];
 
   useEffect(() => {
@@ -517,7 +608,8 @@ function App() {
     : service ? <ServicePage page={service}/> : null;
 
   return <div className="page">
-    <Preloader/>
+    <Preloader onDone={() => setPreDone(true)}/>
+    <WarningNotice ready={preDone}/>
     <Nav/>
     {subpage ? <main>{subpage}</main> : <main>
       <section className="hero">
@@ -529,6 +621,7 @@ function App() {
             <div className="gallery-stat-divider" />
             <div className="gallery-stat"><strong>5+ Years</strong><span>in the Philippines</span></div>
           </div>
+          <VerifiedBadges/>
         </div>
         <Gallery/>
         <div className="hero-bottom">
