@@ -122,8 +122,9 @@ function Nav() {
       <nav className={mobileOpen ? 'nav-menu open' : 'nav-menu'}>
         <a className="nav-link" href="#/">Home</a>
         <Dropdown label="Services" items={[{ label: 'Business Expansion Loans', href: '#/business-expansion-loans' }, { label: 'MSMEs', href: '#/msme-financing' }, { label: 'Corporate', href: '#/corporate-financing' }, ]}/>
-        <Dropdown label="About" items={[{ label: 'FAQ', href: '#/faq' }, { label: 'Terms and Conditions', href: '#/terms' }, { label: 'Privacy Policy', href: '#/privacy' }, { label: 'Loan Calculator', href: '#/loan-calculator' }]}/>
-        
+        <Dropdown label="About" items={[{ label: 'FAQ', href: '#/faq' }, { label: 'Terms and Conditions', href: '#/terms' }, { label: 'Privacy Policy', href: '#/privacy' }]}/>
+        <a className="nav-link" href="#/loan-calculator">Loan Calculator</a>
+
         {/*<a className="nav-link" href="#pricing">Pricing</a>
         <a className="nav-link" href="#community">Community</a>
         <a className="nav-link" href="#affiliate">Affiliate</a> */}
