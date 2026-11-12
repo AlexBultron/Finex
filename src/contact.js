@@ -8,7 +8,9 @@
 //   WHATSAPP_PHONE_ID  the Phone number ID (the number that SENDS the message)
 //   WHATSAPP_TO        the number that RECEIVES the inquiries, digits only, e.g. 639171222015
 // Optional:
-//   WHATSAPP_TEMPLATE  approved template name (default: new_inquiry)
+//   WHATSAPP_TEMPLATE  approved template name (default: new_inquiry).
+//                      Use "text" to send a normal text message instead. That works only if
+//                      WHATSAPP_TO has messaged your business number in the last 24 hours.
 //   WHATSAPP_LANG      template language code (default: en)
 //   WHATSAPP_API_VERSION  Graph API version (default: v25.0)
 
@@ -27,7 +29,10 @@ export default async function handler(req, res) {
     return res.status(405).json({ ok: false, error: 'Method not allowed' });
   }
 
-  const { WHATSAPP_TOKEN, WHATSAPP_PHONE_ID, WHATSAPP_TO } = process.env;
+  // Pasted values often carry hidden characters, so tidy them up first.
+  const WHATSAPP_TOKEN = (process.env.WHATSAPP_TOKEN || '').replace(/[^\x21-\x7e]/g, '');
+  const WHATSAPP_PHONE_ID = (process.env.WHATSAPP_PHONE_ID || '').replace(/\D/g, '');
+  const WHATSAPP_TO = (process.env.WHATSAPP_TO || '').replace(/\D/g, '');
   if (!WHATSAPP_TOKEN || !WHATSAPP_PHONE_ID || !WHATSAPP_TO) {
     console.error('Missing WhatsApp environment variables');
     return res.status(500).json({ ok: false, error: 'Server is not configured' });
@@ -64,23 +69,34 @@ export default async function handler(req, res) {
     .join(' | ');
 
   const template = process.env.WHATSAPP_TEMPLATE || 'new_inquiry';
-  const payload = {
-    messaging_product: 'whatsapp',
-    to: String(WHATSAPP_TO).replace(/\D/g, ''),
-    type: 'template',
-    template: {
-      name: template,
-      language: { code: process.env.WHATSAPP_LANG || 'en' }
-    }
-  };
+  const to = String(WHATSAPP_TO).replace(/\D/g, '');
+  let payload;
 
-  // "hello_world" (the built-in test template) takes no variables, so only
-  // add them for your own template.
-  if (template !== 'hello_world') {
-    payload.template.components = [{
-      type: 'body',
-      parameters: [name, company, phone, inquiry, details].map((text) => ({ type: 'text', text: orDash(text) }))
-    }];
+  if (template === 'text') {
+    // Plain text message (line breaks allowed). WhatsApp only delivers it if the
+    // receiving number has messaged your business number in the last 24 hours.
+    const lines = ['*New website inquiry*', ''];
+    [
+      ['Inquiry', body.inquiry], ['Business', body.business], ['Years in business', body.years],
+      ['Amount', body.amount], ['Use of funds', body.purpose], ['Timeline', body.timeline],
+      ['Notes', body.notes], ['Name', name], ['Company', company], ['Phone', phone]
+    ].forEach(([label, v]) => { const t = String(v ?? '').trim().slice(0, 500); if (t) lines.push(`${label}: ${t}`); });
+    payload = { messaging_product: 'whatsapp', to, type: 'text', text: { body: lines.join('\n') } };
+  } else {
+    payload = {
+      messaging_product: 'whatsapp',
+      to,
+      type: 'template',
+      template: { name: template, language: { code: process.env.WHATSAPP_LANG || 'en' } }
+    };
+    // "hello_world" (the built-in test template) takes no variables, so only
+    // add them for your own template.
+    if (template !== 'hello_world') {
+      payload.template.components = [{
+        type: 'body',
+        parameters: [name, company, phone, inquiry, details].map((text) => ({ type: 'text', text: orDash(text) }))
+      }];
+    }
   }
 
   try {
