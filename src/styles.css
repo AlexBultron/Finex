@@ -953,3 +953,31 @@ footer.sf{--ink:#0a2118;--ink2:#3d5a4d;position:relative;display:block;width:100
   .wn-foot{padding:14px 18px 20px}
 }
 @media(prefers-reduced-motion:reduce){.wn-lead,.wn-steps li,.wn-alert{opacity:1;transform:none}}
+
+/* ===== Warning notice: compact size (adjust --wn-w / --wn-fs to resize) ===== */
+.wn{--wn-w:680px;--wn-fs:14.5px}
+.wn-card{width:min(var(--wn-w),100%);max-height:min(calc(100dvh - 28px),760px);border-radius:20px}
+.wn-head{padding:20px 64px 18px 26px;gap:16px}
+.wn-shield{width:52px;height:52px;border-radius:16px}
+.wn-shield svg{width:25px;height:25px}
+.wn-head h2{font-size:clamp(22px,3.6vw,28px)}
+.wn-tag{font-size:9.5px}
+.wn-body{padding:18px 26px 6px;gap:14px}
+.wn-lead{font-size:16px;line-height:1.6}
+.wn-steps{gap:8px}
+.wn-steps li{padding:10px 14px;gap:12px;border-radius:14px}
+.wn-ico{width:32px;height:32px;border-radius:10px}
+.wn-ico svg{width:15px;height:15px}
+.wn-steps p,.wn-alert p{font-size:var(--wn-fs);line-height:1.6}
+.wn-alert{padding:15px 18px 2px;border-radius:16px}
+.wn-alert-tag{margin-bottom:9px;padding:4px 10px;font-size:9.5px}
+.wn-alert p{margin-bottom:11px}
+.wn-foot{padding:12px 26px 20px}
+.wn-btn{height:46px;padding:0 24px;font-size:14px}
+@media(max-width:560px){
+  .wn{--wn-fs:13.5px}
+  .wn-head{padding:16px 54px 14px 16px}
+  .wn-body{padding:14px 14px 4px;gap:12px}
+  .wn-lead{font-size:14.5px}
+  .wn-foot{padding:10px 14px 16px}
+}
