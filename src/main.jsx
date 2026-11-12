@@ -26,6 +26,7 @@ import secLogo from './logo/sec.jpg';
 import amlcLogo from './logo/amlc.jpg';
 import ServicePage from './ServicePage.jsx';
 import ContactPage from './ContactPage.jsx';
+import LoanCalculatorPage from './LoanCalculatorPage.jsx';
 import { FaqPage, LegalPage } from './InfoPages.jsx';
 import { terms, privacy } from './infoData.js';
 import { services } from './servicesData.jsx';
@@ -120,8 +121,8 @@ function Nav() {
       <Brand />
       <nav className={mobileOpen ? 'nav-menu open' : 'nav-menu'}>
         <a className="nav-link" href="#/">Home</a>
-        <Dropdown label="Services" items={[{ label: 'Business Expansion Loans', href: '#/business-expansion-loans' }, { label: 'MSMEs', href: '#/msme-financing' }, { label: 'Corporate', href: '#/corporate-financing' }]}/>
-        <Dropdown label="About" items={[{ label: 'FAQ', href: '#/faq' }, { label: 'Terms and Conditions', href: '#/terms' }, { label: 'Privacy Policy', href: '#/privacy' }]}/>
+        <Dropdown label="Services" items={[{ label: 'Business Expansion Loans', href: '#/business-expansion-loans' }, { label: 'MSMEs', href: '#/msme-financing' }, { label: 'Corporate', href: '#/corporate-financing' }, ]}/>
+        <Dropdown label="About" items={[{ label: 'FAQ', href: '#/faq' }, { label: 'Terms and Conditions', href: '#/terms' }, { label: 'Privacy Policy', href: '#/privacy' }, { label: 'Loan Calculator', href: '#/loan-calculator' }]}/>
         
         {/*<a className="nav-link" href="#pricing">Pricing</a>
         <a className="nav-link" href="#community">Community</a>
@@ -555,6 +556,7 @@ function SiteFooter({ showCta = true }) {
           <a href="#/faq">FAQ</a>
           <a href="#/terms">Terms and Conditions</a>
           <a href="#/privacy">Privacy Policy</a>
+          <a href="#/loan-calculator">Loan Calculator</a>
           <a href="#/contact">Contact</a>
         </nav>
 
@@ -591,7 +593,7 @@ function App() {
   const service = services[route];
 
   useEffect(() => {
-    const pageTitles = { '/contact': 'Contact Us', '/faq': 'FAQ', '/terms': 'Terms and Conditions', '/privacy': 'Privacy Policy' };
+    const pageTitles = { '/contact': 'Contact Us', '/faq': 'FAQ', '/terms': 'Terms and Conditions', '/privacy': 'Privacy Policy', '/loan-calculator': 'Loan Calculator' };
     const pageTitle = pageTitles[route] || service?.title;
     document.title = pageTitle ? `${pageTitle} | Finex.Ph` : 'Finex.Ph Lending Solution Corporation';
     const hash = window.location.hash;
@@ -602,6 +604,7 @@ function App() {
     }
   }, [route, service]);
   const subpage = route === '/contact' ? <ContactPage/>
+    : route === '/loan-calculator' ? <LoanCalculatorPage/>
     : route === '/faq' ? <FaqPage/>
     : route === '/terms' ? <LegalPage doc={terms} current="Terms and Conditions"/>
     : route === '/privacy' ? <LegalPage doc={privacy} current="Privacy Policy"/>
