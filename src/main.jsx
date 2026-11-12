@@ -212,22 +212,61 @@ return (
 function Preloader() {
   const [phase, setPhase] = useState('show'); // show -> hide -> gone
   const [pct, setPct] = useState(0);
+  const [prog, setProg] = useState(0);
   const [bursts, setBursts] = useState([]);
   const tiltRef = useRef(null);
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const ready = { load: document.readyState === 'complete', fonts: !document.fonts };
+    const onLoad = () => { ready.load = true; };
+    if (!ready.load) window.addEventListener('load', onLoad, { once: true });
+    document.fonts?.ready.then(() => { ready.fonts = true; }).catch(() => { ready.fonts = true; });
+
     const start = performance.now();
-    let raf;
+    let last = start;
+    let shown = 0;       // what the bar currently shows (0..1), never goes backwards
+    let finished = false;
+    let raf; let tHide; let tGone;
+
     const tick = (now) => {
-      const t = Math.min(1, (now - start) / 1000);
-      setPct(Math.round((1 - Math.pow(1 - t, 3)) * 100)); // ease-out count to 100
-      if (t < 1) raf = requestAnimationFrame(tick);
+      const dt = Math.min(64, now - last); last = now;
+      const elapsed = now - start;
+      const done = (ready.load && ready.fonts) || elapsed > 15000; // safety net on very slow networks
+
+      // Real progress: how many page images have finished loading
+      const imgs = Array.from(document.images).filter((im) => im.loading !== 'lazy');
+      const loaded = imgs.filter((im) => im.complete).length;
+      const imgFrac = imgs.length ? loaded / imgs.length : 0;
+      // While loading: follow the real image progress, with a slow creep so it never looks frozen
+      const creep = 0.6 * (1 - Math.exp(-elapsed / 2500));
+      const ceiling = done ? 1 : Math.min(0.92, Math.max(0.9 * imgFrac, creep));
+
+      // Glide toward the ceiling; once loaded, always keep moving so it lands on 100% smoothly
+      let next = shown + (ceiling - shown) * (1 - Math.exp(-dt / 260));
+      if (done) next = Math.max(next, shown + dt / 900);
+      shown = Math.min(1, Math.max(shown, next));
+      if (reduce && done) shown = 1;
+
+      const p = shown >= 0.996 ? 1 : shown;
+      setPct(Math.round(p * 100));
+      setProg(p);
+
+      if (p >= 1 && !finished) {
+        finished = true;
+        tHide = setTimeout(() => setPhase('hide'), 350);   // brief pause on 100%
+        tGone = setTimeout(() => { setPhase('gone'); document.body.style.overflow = ''; }, 1000);
+        return;
+      }
+      raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
-    const t1 = setTimeout(() => setPhase('hide'), 1000);
-    const t2 = setTimeout(() => { setPhase('gone'); document.body.style.overflow = ''; }, 1200);
-    return () => { cancelAnimationFrame(raf); clearTimeout(t1); clearTimeout(t2); document.body.style.overflow = ''; };
+    return () => {
+      cancelAnimationFrame(raf); clearTimeout(tHide); clearTimeout(tGone);
+      window.removeEventListener('load', onLoad);
+      document.body.style.overflow = '';
+    };
   }, []);
 
   // Leaf tilts toward the mouse / finger
@@ -263,14 +302,14 @@ function Preloader() {
         <span className="pl2-glow" />
         <div className="pl2-leaf">
           <img className="pl2-img pl2-img-bg" src={logo} alt="" draggable="false" />
-          <img className="pl2-img pl2-img-fill" src={logo} alt="" draggable="false" style={{ clipPath: `inset(${89 - 0.78 * pct}% 0 0 0)` }} />
+          <img className="pl2-img pl2-img-fill" src={logo} alt="" draggable="false" style={{ clipPath: `inset(${89 - 78 * prog}% 0 0 0)` }} />
         </div>
       </div>
       <div className="pl2-meta">
         <span className="pl2-brand">Finex.Ph</span>
         <span className="pl2-pct">{pct}<small>%</small></span>
       </div>
-      <span className="pl2-bar"><i style={{ transform: `scaleX(${pct / 100})` }} /></span>
+      <span className="pl2-bar"><i style={{ transform: `scaleX(${prog})` }} /></span>
     </div>
     {bursts.map((l) => <span key={l.id} className="pl2-spark" style={{ left: l.x, top: l.y, '--dx': `${Math.cos(l.a) * l.d}px`, '--dy': `${Math.sin(l.a) * l.d}px`, '--rot': `${l.r}deg` }} />)}
   </div>;
@@ -307,6 +346,142 @@ function Testimonials() {
       ))}
     </div>
   </section>;
+}
+
+function FooterHills() {
+  return (
+    <svg className="sf-hills" viewBox="0 0 1440 800" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+      <defs>
+        <linearGradient id="sfH1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#eaf7f1"/><stop offset="1" stopColor="#d3ece0"/></linearGradient>
+        <linearGradient id="sfH2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#cdebdd"/><stop offset="1" stopColor="#b3dfca"/></linearGradient>
+        <linearGradient id="sfH3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#a6dac0"/><stop offset="1" stopColor="#86cdb0"/></linearGradient>
+        <linearGradient id="sfH4" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#74c4a5"/><stop offset="1" stopColor="#5db996"/></linearGradient>
+        <linearGradient id="sfMist" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#fff" stopOpacity="0"/><stop offset=".55" stopColor="#fff" stopOpacity=".6"/><stop offset="1" stopColor="#fff" stopOpacity="0"/></linearGradient>
+        <filter id="sfBlur1" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="3"/></filter>
+        <filter id="sfBlur2" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="1.4"/></filter>
+      </defs>
+      <g className="sf-layer l1" filter="url(#sfBlur1)">
+        <path d="M-60 430C100 360 250 380 400 405S690 335 860 365 1170 300 1500 385V820H-60Z" fill="url(#sfH1)"/>
+      </g>
+      <rect x="0" y="390" width="1440" height="150" fill="url(#sfMist)"/>
+      <g className="sf-layer l2" filter="url(#sfBlur2)">
+        <path d="M-60 530C120 440 330 470 500 505S830 405 1010 455 1310 440 1500 495V820H-60Z" fill="url(#sfH2)"/>
+        <path d="M-60 530C120 440 330 470 500 505S830 405 1010 455 1310 440 1500 495" fill="none" stroke="#fff" strokeOpacity=".5" strokeWidth="2"/>
+      </g>
+      <rect x="0" y="480" width="1440" height="150" fill="url(#sfMist)"/>
+      <g className="sf-layer l3">
+        <path d="M-60 625C100 545 330 560 520 605S900 520 1100 565 1340 575 1500 615V820H-60Z" fill="url(#sfH3)"/>
+        <path d="M-60 625C100 545 330 560 520 605S900 520 1100 565 1340 575 1500 615" fill="none" stroke="#fff" strokeOpacity=".45" strokeWidth="2"/>
+      </g>
+      <rect x="0" y="580" width="1440" height="120" fill="url(#sfMist)"/>
+      <g className="sf-layer l4">
+        <path d="M-60 705C150 640 420 650 690 695S1120 645 1500 700V820H-60Z" fill="url(#sfH4)"/>
+        <path d="M-60 705C150 640 420 650 690 695S1120 645 1500 700" fill="none" stroke="#fff" strokeOpacity=".4" strokeWidth="2"/>
+      </g>
+    </svg>
+  );
+}
+
+function GrowBanner() {
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+    if (!('IntersectionObserver' in window)) { el.classList.add('in'); return undefined; }
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) { el.classList.add('in'); io.disconnect(); }
+    }, { threshold: 0.25 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  // Soft light that follows the cursor across the glass
+  const onMove = (e) => {
+    const el = ref.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    el.style.setProperty('--mx', `${e.clientX - r.left}px`);
+    el.style.setProperty('--my', `${e.clientY - r.top}px`);
+  };
+
+  const words = 'Take your business to the next level.'.split(' ');
+  return <section className="gb" ref={ref} onPointerMove={onMove} aria-labelledby="gb-title">
+    <div className="gb-fx" aria-hidden="true">
+      <i className="gb-orb o1"/><i className="gb-orb o2"/><i className="gb-orb o3"/>
+      <i className="gb-bubble b1"/><i className="gb-bubble b2"/><i className="gb-bubble b3"/><i className="gb-bubble b4"/><i className="gb-bubble b5"/>
+      <span className="gb-spot"/>
+    </div>
+    <div className="gb-inner">
+      <span className="gb-eyebrow" data-r style={{ '--i': 0 }}><i/>READY TO GROW?</span>
+      <h2 id="gb-title">
+        {words.map((w, i) => <React.Fragment key={i}><span className="gb-word" style={{ '--w': i }}><span>{w}</span></span>{' '}</React.Fragment>)}
+      </h2>
+      <p data-r style={{ '--i': 5 }}>Talk to the FINEX.PH team about how a Business Expansion Loan can fit your growth plans.</p>
+    </div>
+  </section>;
+}
+
+function SiteFooter({ showCta = true }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+    if (!('IntersectionObserver' in window)) { el.classList.add('in'); return undefined; }
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) { el.classList.add('in'); io.disconnect(); }
+    }, { threshold: 0.12 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  const toTop = (e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+
+  return <footer className="sf" ref={ref}>
+    <div className="sf-scene" aria-hidden="true"><FooterHills/></div>
+    <span className="sf-mark" aria-hidden="true">Finex</span>
+    <div className="sf-inner">
+      <div className="sf-grid">
+        <div className="sf-brand" data-r style={{ '--i': 0 }}>
+          <Brand/>
+          <h2>Financing for every stage of your business.</h2>
+          <p>Flexible, fast and fair lending for growing shops, MSMEs and large enterprises across the Philippines.</p>
+          {showCta && <a className="sf-btn" href="#/contact">Contact Us <ArrowUpRight size={16}/></a>}
+          <span className="sf-copy">© 2026 Finex.Ph Lending Solution Corporation.</span>
+          <div className="sf-end">
+            <SocialButtons className="sf-social"/>
+            <a className="sf-top-link" href="#top" onClick={toTop}>Back to top ↑</a>
+          </div>
+        </div>
+
+        <nav className="sf-col" aria-label="Services" data-r style={{ '--i': 1 }}>
+          <h3>Services</h3>
+          <a href="#/">Home</a>
+          <a href="#/business-expansion-loans">Business Expansion Loans</a>
+          <a href="#/msme-financing">MSME Financing</a>
+          <a href="#/corporate-financing">Corporate Financing</a>
+        </nav>
+
+        <nav className="sf-col" aria-label="About" data-r style={{ '--i': 2 }}>
+          <h3>About</h3>
+          <a href="#/faq">FAQ</a>
+          <a href="#/terms">Terms and Conditions</a>
+          <a href="#/privacy">Privacy Policy</a>
+          <a href="#/contact">Contact</a>
+        </nav>
+
+        <div className="sf-col sf-visit" data-r style={{ '--i': 3 }}>
+          <h3>Visit or call us</h3>
+          <p>Unit 1015 10th floor<br/>Parkway Corporate Center<br/>Filinvest City, Alabang Muntinlupa</p>
+          <p className="sf-hours">Open 9am – 6pm</p>
+          <a className="sf-line" href="tel:+63288133210"><strong>8813 3210</strong><small>Telephone</small></a>
+          <a className="sf-line" href="tel:+639171222015"><strong>(+63) 917 122 2015</strong><small>WhatsApp &amp; Viber</small></a>
+          <div className="sf-chat">
+            <a href="https://wa.me/639171222015" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+            <a href="viber://chat?number=%2B639171222015">Viber</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>;
 }
 
 function useRoute() {
@@ -348,7 +523,7 @@ function App() {
       <section className="hero">
         <div className="hero-copy">
           <div className="eyebrow"><Sparkles size={13}/> FINANCIAL SOLUTIONS • PHILIPPINES</div>
-          <h1>Lending a hand towards<br/><span className="accent">your financial<br/>success.</span></h1>
+          <h1><span className="accent">Lending</span> a hand towards<br/>your financial<br/><span className="accent">success.</span></h1>
           <div className="gallery-stats">
             <div className="gallery-stat"><strong>1K+</strong><span>Partners</span></div>
             <div className="gallery-stat-divider" />
@@ -388,16 +563,9 @@ function App() {
         </div>
       </section>
       <Testimonials/>
-      <section className="pricing-strip" id="pricing"><div><span>READY TO TAKE THE NEXT STEP?</span><h2>Let’s build your financial success together.</h2></div><a className="primary-button" href="#/contact">Contact Us <ArrowUpRight size={15}/></a></section>
     </main>}
-    <footer>
-      <Brand/>
-      <span>© 2026 Finex.Ph Lending Solution Corporation.</span>
-      <nav className="footer-links" aria-label="Footer">
-        <a href="#/faq">FAQ</a><a href="#/terms">Terms</a><a href="#/privacy">Privacy</a><a href="#/contact">Contact</a>
-      </nav>
-      <a href="#top" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>Back to top ↑</a>
-    </footer>
+    <GrowBanner/>
+    <SiteFooter showCta={route !== '/contact'}/>
   </div>;
 }
 

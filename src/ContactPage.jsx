@@ -67,16 +67,18 @@ export function ContactArt() {
 
 /* ---------- Question-by-question form ---------- */
 
-// Edit the questions and choices here. type: 'single' | 'multi' | 'text' | 'long' | 'phone'
+// Edit the questions and choices here. type: 'single' | 'multi' | 'range' | 'text' | 'long' | 'phone'
 const STEPS = [
   { id: 'inquiry', type: 'single', q: 'What is your inquiry?', hint: 'Pick the one that fits best.', label: 'Inquiry',
     options: ['Business Expansion Loan', 'MSME Financing', 'Corporate Financing', 'General question'] },
   { id: 'business', type: 'single', q: 'What kind of business do you have?', label: 'Type of business',
     options: ['Retail / Trading', 'Food & Beverage', 'Services', 'Manufacturing', 'Construction / Real Estate', 'Other'] },
-  { id: 'years', type: 'single', q: 'How long has your business been operating?', label: 'Years in business',
-    options: ['Not yet started', 'Less than 1 year', '1–3 years', '3–5 years', '5+ years'] },
-  { id: 'amount', type: 'single', q: 'About how much financing are you looking for?', hint: 'An estimate is fine.', label: 'Financing amount',
-    options: ['Below ₱500,000', '₱500,000 – ₱2M', '₱2M – ₱10M', '₱10M – ₱50M', 'Above ₱50M', 'Not sure yet'] },
+  { id: 'years', type: 'range', q: 'How long has your business been operating?', hint: 'Slide to choose.', label: 'Time in business',
+    min: 1, max: 12, step: 1, start: 6,
+    format: (v) => (v >= 12 ? '1 year or more' : v === 1 ? '1 month' : `${v} months`) },
+  { id: 'amount', type: 'range', q: 'About how much financing are you looking for?', hint: 'An estimate is fine. Slide to choose.', label: 'Financing amount',
+    min: 1000000, max: 15000000, step: 500000, start: 5000000,
+    format: (v) => (v >= 15000000 ? '₱15M+' : `₱${v / 1000000}M`) },
   { id: 'purpose', type: 'multi', q: 'What will the funds be used for?', hint: 'Choose all that apply.', label: 'Use of funds',
     options: ['Working capital', 'Inventory', 'Equipment', 'Expansion / new location', 'Business improvements', 'Acquisition / merger', 'Other'] },
   { id: 'timeline', type: 'single', q: 'When do you need the funds?', label: 'Timeline',
@@ -88,7 +90,7 @@ const STEPS = [
 ];
 
 const stepError = (step, value) => {
-  if (step.optional) return '';
+  if (step.optional || step.type === 'range') return '';
   if (step.type === 'multi') return value && value.length ? '' : 'Please choose at least one.';
   const v = (value || '').trim();
   if (!v) return step.type === 'single' ? 'Please choose one to continue.' : 'This one is required.';
@@ -96,7 +98,10 @@ const stepError = (step, value) => {
   return '';
 };
 
-const answerText = (step, value) => (step.type === 'multi' ? (value || []).join(', ') : (value || '').trim());
+const answerText = (step, value) => {
+  if (step.type === 'range') return value === undefined ? '' : step.format(value);
+  return step.type === 'multi' ? (value || []).join(', ') : (value || '').trim();
+};
 
 function buildMessage(answers) {
   const lines = ['Hello FINEX.PH! I’d like to make an inquiry.', ''];
@@ -113,8 +118,7 @@ function ContactForm() {
   const [answers, setAnswers] = useState({});
   const [error, setError] = useState('');
   const [dir, setDir] = useState('fwd');
-  const [sendState, setSendState] = useState('idle'); // idle | sending | sent | error
-  const [trap, setTrap] = useState('');
+  const [note, setNote] = useState(''); // message shown after tapping Viber / Copy
   const total = STEPS.length;
   const review = index >= total;
   const step = STEPS[index];
@@ -124,6 +128,7 @@ function ContactForm() {
   const go = (next, d) => { setDir(d); setIndex(next); setError(''); };
 
   const next = (override) => {
+    if (step.type === 'range' && answers[step.id] === undefined) setValue(step.id, step.start);
     const value = override !== undefined ? override : answers[step.id];
     const err = stepError(step, value);
     if (err) { setError(err); return; }
@@ -143,41 +148,25 @@ function ContactForm() {
     if (e.key === 'Enter' && !(e.target.tagName === 'TEXTAREA' && !e.metaKey && !e.ctrlKey)) { e.preventDefault(); next(); }
   };
 
-  const openWhatsApp = () => {
+  const copyMessage = async () => {
+    try { await navigator.clipboard.writeText(message); return true; } catch { return false; }
+  };
+  // WhatsApp: opens a chat with our number and the whole message already typed.
+  const sendWhatsApp = () => {
     window.open(`https://wa.me/${MOBILE_E164}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
   };
-  const send = async () => {
-    setSendState('sending');
-    try {
-      const body = Object.fromEntries(STEPS.map((s) => [s.id, answerText(s, answers[s.id])]));
-      const res = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...body, website: trap })
-      });
-      if (!res.ok) throw new Error('send failed');
-      setSendState('sent');
-    } catch {
-      setSendState('error'); // offer the WhatsApp link as a backup
-    }
+  // Viber can't pre-fill text, so we copy the message and open the chat for pasting.
+  const sendViber = async () => {
+    const ok = await copyMessage();
+    setNote(ok ? 'Message copied! Paste it into the Viber chat and tap send.' : 'Viber opened. Tap “Copy message” below, then paste it into the chat.');
+    window.location.href = `viber://chat?number=%2B${MOBILE_E164}`;
   };
-  const restart = () => { setAnswers({}); setSendState('idle'); go(0, 'back'); };
+  const onCopy = async () => {
+    setNote((await copyMessage()) ? 'Message copied! Paste it into WhatsApp or Viber and tap send.' : 'Couldn’t copy automatically. Please select and copy the message above.');
+  };
+  const restart = () => { setAnswers({}); setNote(''); go(0, 'back'); };
 
   const pct = Math.round((Math.min(index, total) / total) * 100);
-
-  if (sendState === 'sent') {
-    const first = (answers.name || '').trim().split(' ')[0];
-    return (
-      <div className="qf qf-done">
-        <span className="qf-check"><Check size={30} strokeWidth={3} /></span>
-        <h3 className="qf-q">Thank you{first ? `, ${first}` : ''}!</h3>
-        <p className="qf-hint">We’ve received your inquiry. Our team will contact you at <strong>{(answers.phone || '').trim()}</strong> soon.</p>
-        <div className="qf-nav qf-nav-center">
-          <button type="button" className="qf-back" onClick={restart}>Send another inquiry</button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="qf" onKeyDown={review ? undefined : onKeyDown}>
@@ -205,6 +194,20 @@ function ContactForm() {
             </div>
           )}
 
+          {step.type === 'range' && (() => {
+            const v = answers[step.id] ?? step.start;
+            const pct = ((v - step.min) / (step.max - step.min)) * 100;
+            return (
+              <div className="qf-range">
+                <output className="qf-range-value" aria-live="polite">{step.format(v)}</output>
+                <input className="qf-slider" type="range" min={step.min} max={step.max} step={step.step} value={v}
+                  style={{ '--pct': `${pct}%` }} aria-label={step.q} aria-valuetext={step.format(v)}
+                  onChange={(e) => setValue(step.id, Number(e.target.value))} />
+                <div className="qf-range-ends"><span>{step.format(step.min)}</span><span>{step.format(step.max)}</span></div>
+              </div>
+            );
+          })()}
+
           {(step.type === 'text' || step.type === 'phone') && (
             <input className="qf-input" autoFocus type={step.type === 'phone' ? 'tel' : 'text'} autoComplete={step.autoComplete} placeholder={step.placeholder}
               value={answers[step.id] || ''} onChange={(e) => setValue(step.id, e.target.value)} aria-label={step.q} />
@@ -228,27 +231,24 @@ function ContactForm() {
       ) : (
         <div className="qf-step qf-fwd" key="review">
           <h3 className="qf-q">All set, please review.</h3>
-          <p className="qf-hint">Check your answers, then send them to the FINEX.PH team.</p>
+          <p className="qf-hint">Check your answers, then send them to the FINEX.PH team on WhatsApp or Viber. It opens your app with everything ready.</p>
           <ul className="qf-summary">
             {STEPS.map((s, i) => {
               const t = answerText(s, answers[s.id]);
               return t ? <li key={s.id}><span>{s.label}</span><strong>{t}</strong><button type="button" onClick={() => go(i, 'back')}>Edit</button></li> : null;
             })}
           </ul>
-          <input className="qf-hp" tabIndex={-1} autoComplete="off" aria-hidden="true" name="website" value={trap} onChange={(e) => setTrap(e.target.value)} />
-          {sendState === 'error' && (
-            <div className="ct-banner ct-banner-err" role="alert" style={{ marginTop: 16 }}>
-              <span>Sorry, we couldn’t send that just now. You can send the same message directly on WhatsApp instead.</span>
-            </div>
-          )}
-          <div className="qf-nav qf-nav-end">
-            <button type="button" className="qf-back" onClick={() => go(total - 1, 'back')} disabled={sendState === 'sending'}>← Back</button>
-            {sendState === 'error' && <button type="button" className="qf-back qf-wa" onClick={openWhatsApp}>Send on WhatsApp</button>}
-            <button type="button" className="primary-button qf-next" onClick={send} disabled={sendState === 'sending'}>
-              {sendState === 'sending' ? 'Sending…' : sendState === 'error' ? 'Try again' : 'Send inquiry'} <Send size={15} />
-            </button>
+          <p className="qf-sendas">Send it to us using:</p>
+          <div className="qf-send-row">
+            <button type="button" className="qf-sendbtn qf-wa-btn" onClick={sendWhatsApp}><Send size={16} /> WhatsApp</button>
+            <button type="button" className="qf-sendbtn qf-vb-btn" onClick={sendViber}><Send size={16} /> Viber</button>
           </div>
-          <p className="ct-note"><button type="button" className="qf-link" onClick={restart}>Start over</button></p>
+          {note && <p className="qf-note" role="status">{note}</p>}
+          <div className="qf-nav qf-nav-end">
+            <button type="button" className="qf-back" onClick={() => go(total - 1, 'back')}>← Back</button>
+            <button type="button" className="qf-back" onClick={onCopy}>Copy message</button>
+            <button type="button" className="qf-back" onClick={restart}>Start over</button>
+          </div>
         </div>
       )}
     </div>
